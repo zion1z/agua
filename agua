@@ -1,0 +1,100 @@
+-- this is an example for the script, use this to make your own! (Might be adding custom Themes)
+local Lib = loadstring(game:HttpGet("https://raw.githubusercontent.com/7yhx/kwargs_Ui_Library/main/source.lua"))()
+
+local UI = Lib:Create{
+   Theme = "Dark", -- or any other theme
+   Size = UDim2.new(0, 555, 0, 400) -- default
+}
+
+local Main = UI:Tab{
+   Name = "Main"
+}
+
+local Divider = Main:Divider{
+   Name = "Inicio shit"
+}
+
+local QuitDivider = Main:Divider{
+   Name = "Sair"
+}
+
+-- Configurações do ESP
+local ESPColorTeam = Color3.fromRGB(0, 0, 255) -- Cor azul para jogadores da sua equipe
+local ESPColorEnemy = Color3.fromRGB(255, 0, 0) -- Cor vermelha para jogadores inimigos
+local ESPThickness = 2 -- Espessura da linha do ESP
+local FOVRadius = 100 -- Raio do campo de visão (FOV)
+local ESPEnabled = true -- Variável para ativar/desativar o ESP
+
+-- Função para criar o ESP
+local function createESP(player, color)
+    local highlight = Instance.new("Highlight")
+    highlight.Adornee = player.Character
+    highlight.FillColor = color
+    highlight.OutlineColor = color
+    highlight.OutlineTransparency = 0.5
+    highlight.Parent = player.Character
+end
+
+-- Função para remover o ESP
+local function removeESP(player)
+    if player.Character:FindFirstChildOfClass("Highlight") then
+        player.Character:FindFirstChildOfClass("Highlight"):Destroy()
+    end
+end
+
+-- Função para desenhar o FOV
+local function drawFOV()
+    local fovCircle = Drawing.new("Circle")
+    fovCircle.Radius = FOVRadius
+    fovCircle.Thickness = ESPThickness
+    fovCircle.Color = ESPColorEnemy
+    fovCircle.Position = Vector2.new(workspace.CurrentCamera.ViewportSize.X / 2, workspace.CurrentCamera.ViewportSize.Y / 2)
+    fovCircle.Visible = ESPEnabled
+    return fovCircle
+end
+
+-- Adiciona ESP para todos os jogadores atuais
+for _, player in pairs(game.Players:GetPlayers()) do
+    if player.Team == game.Players.LocalPlayer.Team then
+        createESP(player, ESPColorTeam)
+    else
+        createESP(player, ESPColorEnemy)
+    end
+end
+
+-- Adiciona ESP para novos jogadores que entrarem no jogo
+game.Players.PlayerAdded:Connect(function(player)
+    player.CharacterAdded:Connect(function()
+        if player.Team == game.Players.LocalPlayer.Team then
+            createESP(player, ESPColorTeam)
+        else
+            createESP(player, ESPColorEnemy)
+        end
+    end)
+end)
+
+-- Remove ESP quando um jogador sai do jogo
+game.Players.PlayerRemoving:Connect(function(player)
+    removeESP(player)
+end)
+
+-- Desenha o FOV
+local fovCircle = drawFOV()
+
+-- Função para alternar o ESP
+local function toggleESP()
+    ESPEnabled = not ESPEnabled
+    for _, player in pairs(game.Players:GetPlayers()) do
+        if player.Character:FindFirstChildOfClass("Highlight") then
+            player.Character:FindFirstChildOfClass("Highlight").Enabled = ESPEnabled
+        end
+    end
+    fovCircle.Visible = ESPEnabled
+end
+
+-- Conecta a função de alternar ESP a uma tecla (por exemplo, "E")
+game:GetService("UserInputService").InputBegan:Connect(function(input)
+    if input.KeyCode == Enum.KeyCode.E then
+        toggleESP()
+    end
+end)
